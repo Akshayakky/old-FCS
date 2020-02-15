@@ -29,13 +29,12 @@ function flipCoin(){
 		flipCombination=""
 	done
 }
-
+sum=0
 #FUNCTION TO STORE COIN FLIP COMBINATION AND CORRESPONDING PERCENTAGE
 function calculatePercentage(){
 	for i in ${!doubletDictionary[@]}
 	do
-#		doubletDictionary[$i]=`echo "scale=2; ${doubletDictionary[$i]}*100/$numberIteration" | bc`
-		doubletDictionary[$i]=`echo "scale=2; ${doubletDictionary[$i]}*100/$numberIteration" | bc | awk '{printf "%.3f",$0}'`
+		doubletDictionary[$i]=`echo "scale=2; ${doubletDictionary[$i]}*100/$numberIteration" | bc`
 	done
 }
 
