@@ -44,77 +44,85 @@ function flipCoin(){
 	done
 }
 
-#CONVERTING COUNT TO PERCENTAGE IN ALL COMBINATION DICTIONARIES
+#FUNCTION TO CONVERT DICTIONARY TO ARRAY OF COMBINATIONS AND COUNTS
+function dictionaryToArray(){
+	local combinationAndCountArray=("$@")
+	local NO_OF_RECORDS=$((${#combinationAndCountArray[@]}/2))
+	for (( i=0; i<$NO_OF_RECORDS; i++ ))
+	do
+		newCombinationAndCountArray[$i]=${combinationAndCountArray[$i]}:${combinationAndCountArray[$NO_OF_RECORDS + $i]}
+	done
+	echo ${newCombinationAndCountArray[@]}
+}
+
+#CONVERTING COUNT TO PERCENTAGE IN ALL COMBINATION ARRAYS
 function calculatePercentage(){
-	local NO_OF_COINS=$1
-	if [ $NO_OF_COINS -eq $SINGLET ]
-	then
-		for i in ${!singletDictionary[@]}
-		do
-			singletDictionary[$i]=`echo "scale=2; ${singletDictionary[$i]}*100/$numberIteration" | bc`
-		done
-	elif [ $NO_OF_COINS -eq $DOUBLET ]
-	then
-		for i in ${!doubletDictionary[@]}
-		do
-			doubletDictionary[$i]=`echo "scale=2; ${doubletDictionary[$i]}*100/$numberIteration" | bc`
-		done
-	else
-		for i in ${!tripletDictionary[@]}
-		do
-			tripletDictionary[$i]=`echo "scale=2; ${tripletDictionary[$i]}*100/$numberIteration" | bc`
-		done
-	fi
+	local combinationAndCountArray=("$@")
+	for i in ${!combinationAndCountArray[@]}
+	do
+		key=$(echo ${combinationAndCountArray[$i]} | cut -f 1 -d ":")
+		count=$(echo ${combinationAndCountArray[$i]} | cut -f 2 -d ":")
+		combinationAndPercentArray[$i]=$key:`echo "scale=2; $count*100/$numberIteration" | bc`
+	done
+	echo ${combinationAndPercentArray[@]}
 }
 
 #FUNCTION TO SORT COMBINATION ARRAYS PERCENTAGE WISE IN DESCENDING ORDER
 function sortArray(){
-	keysAndValuesArray=("$@")
-	local NO_OF_RECORDS=${#keysAndValuesArray[@]}
+	local combinationAndPercentArray=("$@")
+	local NO_OF_RECORDS=${#combinationAndPercentArray[@]}
 	for (( i=0; i<$NO_OF_RECORDS; i++ ))
 	do
 		for (( j=0; j<$(($NO_OF_RECORDS-1)); j++ ))
 		do
-			firstElement=$(echo ${keysAndValuesArray[j]} | awk -F: '{print $2}')
-			secondElement=$(echo ${keysAndValuesArray[j+1]} | cut -f 2 -d ":")
+			firstElement=$(echo ${combinationAndPercentArray[j]} | awk -F: '{print $2}')
+			secondElement=$(echo ${combinationAndPercentArray[j+1]} | cut -f 2 -d ":")
 			if (( $(echo "$firstElement < $secondElement" |bc -l) ))
 			then
-				temp=${keysAndValuesArray[j]}
-				keysAndValuesArray[j]=${keysAndValuesArray[j+1]}
-				keysAndValuesArray[j+1]=$temp
+				temp=${combinationAndPercentArray[j]}
+				combinationAndPercentArray[j]=${combinationAndPercentArray[j+1]}
+				combinationAndPercentArray[j+1]=$temp
 			fi
 		done
 	done
-	echo ${keysAndValuesArray[@]}
+	echo ${combinationAndPercentArray[@]}
 }
 
-#FUNCTION TO CONVERT DICTIONARY TO ARRAY OF KEYS AND VALUES
-function dictionaryToArray(){
-	keysAndValuesArray=("$@")
-	local NO_OF_RECORDS=$((${#keysAndValuesArray[@]}/2))
-	for (( i=0; i<$NO_OF_RECORDS; i++ ))
-	do
-		returnArray[$i]=${keysAndValuesArray[$i]}:${keysAndValuesArray[$NO_OF_RECORDS + $i]}
-	done
-	echo ${returnArray[@]}
+function winningCombination(){
+array=("$@")
+i=0
+winningCombination=${array[0]}
+while [ $i -lt $((${#array[@]}-1)) ]
+do
+	first=$(echo "${array[0]}" | cut -f 2 -d ":")
+	second=$(echo "${array[i+1]}" | cut -f 2 -d ":")
+	if (( $(echo "$first == $second" |bc -l) ))
+	then
+		winningCombination=$winningCombination" "${array[i+1]}
+	else
+		break
+	fi
+	((i++))
+done
+echo $winningCombination
 }
 
 flipCoin $numberIteration $SINGLET
 flipCoin $numberIteration $DOUBLET
 flipCoin $numberIteration $TRIPLET
 
-calculatePercentage $SINGLET
-calculatePercentage $DOUBLET
-calculatePercentage $TRIPLET
+singletArray=($(dictionaryToArray ${!singletDictionary[@]} ${singletDictionary[@]}))
+doubletArray=($(dictionaryToArray ${!doubletDictionary[@]} ${doubletDictionary[@]}))
+tripletArray=($(dictionaryToArray ${!tripletDictionary[@]} ${tripletDictionary[@]}))
 
-singletArray="$(dictionaryToArray ${!singletDictionary[@]} ${singletDictionary[@]})"
-singletArray=($(sortArray $singletArray))
-singletWinningCombination=${singletArray[0]}%
+singletArray=($(calculatePercentage ${singletArray[@]}))
+doubletArray=($(calculatePercentage ${doubletArray[@]}))
+tripletArray=($(calculatePercentage ${tripletArray[@]}))
 
-doubletArray="$(dictionaryToArray ${!doubletDictionary[@]} ${doubletDictionary[@]})"
-doubletArray=($(sortArray $doubletArray))
-doubletWinningCombination=${doubletArray[0]}%
+singletArray=($(sortArray ${singletArray[@]}))
+doubletArray=($(sortArray ${doubletArray[@]}))
+tripletArray=($(sortArray ${tripletArray[@]}))
 
-tripletArray="$(dictionaryToArray ${!tripletDictionary[@]} ${tripletDictionary[@]})"
-tripletArray=($(sortArray $tripletArray))
-tripletWinningCombination=${tripletArray[0]}%
+singletWinningCombination=($(winningCombination ${singletArray[@]}))
+doubletWinningCombination=($(winningCombination ${doubletArray[@]}))
+tripletWinningCombination=($(winningCombination ${tripletArray[@]}))
