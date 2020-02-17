@@ -67,27 +67,36 @@ function calculatePercentage(){
 	fi
 }
 
-#FUNCTION TO SORT COMBINATIONS PERCENTAGE WISE IN DESCENDING ORDER
-function sort(){
+#FUNCTION TO SORT COMBINATION ARRAYS PERCENTAGE WISE IN DESCENDING ORDER
+function sortArray(){
 	keysAndValuesArray=("$@")
-	local count=1
-	local NO_OF_RECORDS=$((${#keysAndValuesArray[@]}/2))
-	#USING BUBBLESORT TO SORT KEYS AND VALUES IN keysAndValuesArray ARRAY
+	local NO_OF_RECORDS=${#keysAndValuesArray[@]}
 	for (( i=0; i<$NO_OF_RECORDS; i++ ))
 	do
 		for (( j=0; j<$(($NO_OF_RECORDS-1)); j++ ))
 		do
-			if (( $(echo "${keysAndValuesArray[j+$NO_OF_RECORDS]} < ${keysAndValuesArray[j+$NO_OF_RECORDS+1]}" |bc -l) ))
+			firstElement=$(echo ${keysAndValuesArray[j]} | awk -F: '{print $2}')
+			secondElement=$(echo ${keysAndValuesArray[j+1]} | cut -f 2 -d ":")
+			if (( $(echo "$firstElement < $secondElement" |bc -l) ))
 			then
 				temp=${keysAndValuesArray[j]}
 				keysAndValuesArray[j]=${keysAndValuesArray[j+1]}
 				keysAndValuesArray[j+1]=$temp
-				temp=${keysAndValuesArray[j+$NO_OF_RECORDS]}
-				keysAndValuesArray[j+$NO_OF_RECORDS]=${keysAndValuesArray[j+1+$NO_OF_RECORDS]}
-				keysAndValuesArray[j+1+$NO_OF_RECORDS]=$temp
 			fi
 		done
 	done
+	echo ${keysAndValuesArray[@]}
+}
+
+#FUNCTION TO CONVERT DICTIONARY TO ARRAY OF KEYS AND VALUES
+function dictionaryToArray(){
+	keysAndValuesArray=("$@")
+	local NO_OF_RECORDS=$((${#keysAndValuesArray[@]}/2))
+	for (( i=0; i<$NO_OF_RECORDS; i++ ))
+	do
+		returnArray[$i]=${keysAndValuesArray[$i]}:${keysAndValuesArray[$NO_OF_RECORDS + $i]}
+	done
+	echo ${returnArray[@]}
 }
 
 flipCoin $numberIteration $SINGLET
@@ -98,11 +107,14 @@ calculatePercentage $SINGLET
 calculatePercentage $DOUBLET
 calculatePercentage $TRIPLET
 
-sort ${!singletDictionary[@]} ${singletDictionary[@]}
-singletWinningCombination=${keysAndValuesArray[0]}
+singletArray="$(dictionaryToArray ${!singletDictionary[@]} ${singletDictionary[@]})"
+singletArray=($(sortArray $singletArray))
+singletWinningCombination=${singletArray[0]}%
 
-sort ${!doubletDictionary[@]} ${doubletDictionary[@]}
-doubletWinningCombination=${keysAndValuesArray[0]}
+doubletArray="$(dictionaryToArray ${!doubletDictionary[@]} ${doubletDictionary[@]})"
+doubletArray=($(sortArray $doubletArray))
+doubletWinningCombination=${doubletArray[0]}%
 
-sort ${!tripletDictionary[@]} ${tripletDictionary[@]}
-tripletWinningCombination=${keysAndValuesArray[0]}
+tripletArray="$(dictionaryToArray ${!tripletDictionary[@]} ${tripletDictionary[@]})"
+tripletArray=($(sortArray $tripletArray))
+tripletWinningCombination=${tripletArray[0]}%
